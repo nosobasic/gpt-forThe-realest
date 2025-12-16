@@ -13,16 +13,18 @@ export class SpeechToText {
 
   constructor() {
     // Check for browser support
-    const SpeechRecognition = 
-      window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognitionConstructor = 
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
-    this.isSupported = !!SpeechRecognition;
+    this.isSupported = !!SpeechRecognitionConstructor;
     
-    if (this.isSupported) {
-      this.recognition = new SpeechRecognition();
-      this.recognition.continuous = true;
-      this.recognition.interimResults = true;
-      this.recognition.lang = 'en-US';
+    if (this.isSupported && SpeechRecognitionConstructor) {
+      this.recognition = new SpeechRecognitionConstructor();
+      if (this.recognition) {
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+        this.recognition.lang = 'en-US';
+      }
     }
   }
 
@@ -118,48 +120,53 @@ export class SpeechToText {
 // Extend Window interface for TypeScript
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
+    SpeechRecognition?: {
+      new (): SpeechRecognition;
+    };
+    webkitSpeechRecognition?: {
+      new (): SpeechRecognition;
+    };
   }
+}
 
-  interface SpeechRecognition extends EventTarget {
-    continuous: boolean;
-    interimResults: boolean;
-    lang: string;
-    start(): void;
-    stop(): void;
-    abort(): void;
-    onresult: ((event: SpeechRecognitionEvent) => void) | null;
-    onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-    onend: (() => void) | null;
-  }
+// Define types for Speech Recognition API
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
 
-  interface SpeechRecognitionEvent extends Event {
-    resultIndex: number;
-    results: SpeechRecognitionResultList;
-  }
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
 
-  interface SpeechRecognitionResultList {
-    length: number;
-    item(index: number): SpeechRecognitionResult;
-    [index: number]: SpeechRecognitionResult;
-  }
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResultItem;
+  [index: number]: SpeechRecognitionResultItem;
+}
 
-  interface SpeechRecognitionResult {
-    length: number;
-    item(index: number): SpeechRecognitionAlternative;
-    [index: number]: SpeechRecognitionAlternative;
-    isFinal: boolean;
-  }
+interface SpeechRecognitionResultItem {
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  readonly isFinal: boolean;
+}
 
-  interface SpeechRecognitionAlternative {
-    transcript: string;
-    confidence: number;
-  }
+interface SpeechRecognitionAlternative {
+  readonly transcript: string;
+  readonly confidence: number;
+}
 
-  interface SpeechRecognitionErrorEvent extends Event {
-    error: string;
-    message: string;
-  }
+interface SpeechRecognitionErrorEvent extends Event {
+  readonly error: string;
+  readonly message: string;
 }
 
