@@ -154,6 +154,34 @@
   margin: 0;
 }
 
+.affirmation-carousel {
+  position: relative;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.affirmation-text {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  animation: fadeInAffirmation 1s ease-in;
+  opacity: 1;
+}
+
+@keyframes fadeInAffirmation {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Message Styling */
 .message {
   display: flex;
