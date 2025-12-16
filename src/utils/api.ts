@@ -1,23 +1,12 @@
 /**
- * OpenAI ChatGPT API Integration
+ * Backend API Integration
  * 
- * IMPORTANT: Set your OpenAI API key using one of these methods:
- * 
- * Method 1 (Recommended - Environment Variable):
- * - Create a .env file in the root directory
- * - Add: VITE_OPENAI_API_KEY=your_actual_key_here
- * - The app will automatically use this value
- * 
- * Method 2 (Direct - For testing only):
- * - Replace 'YOUR_API_KEY_HERE' below with your actual API key
- * - Note: This is less secure and not recommended for production
- * 
- * Get your API key from: https://platform.openai.com/api-keys
+ * This app connects to the backend deployed on Render.com
+ * The backend handles OpenAI API communication securely
  */
 
-// Try to get API key from environment variable first, fallback to direct value
-const API_KEY = import.meta.env.VITE_OPENAI_API_KEY || 'YOUR_API_KEY_HERE';
-const API_URL = 'https://api.openai.com/v1/chat/completions';
+// Backend API URL
+const API_URL = 'https://gpt-forthe-realest.onrender.com';
 
 export interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -37,57 +26,80 @@ export interface ChatResponse {
 }
 
 /**
- * Sends a message to OpenAI ChatGPT API and returns the assistant's response
+ * Sends a message to the backend API and returns the assistant's response
  * @param messages - Array of conversation messages (maintains context)
  * @returns Promise with the assistant's response text
  */
 export async function sendMessage(messages: Message[]): Promise<string> {
-  // Check if API key is set
-  if (API_KEY === 'YOUR_API_KEY_HERE') {
-    throw new Error(
-      'Please set your OpenAI API key in src/utils/api.ts. ' +
-      'Get your key from https://platform.openai.com/api-keys'
-    );
-  }
-
   try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo', // You can change this to 'gpt-4' if you have access
-        messages: messages,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error?.message || 
-        `API request failed with status ${response.status}`
-      );
-    }
-
-    const data: ChatResponse = await response.json();
+    // Try common backend endpoints - adjust based on your backend structure
+    const endpoints = ['/chat', '/api/chat', '/'];
     
-    if (data.error) {
-      throw new Error(data.error.message);
-    }
+    let lastError: Error | null = null;
+    
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messages: messages,
+          }),
+        });
 
-    if (!data.choices || data.choices.length === 0) {
-      throw new Error('No response from API');
-    }
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error?.message || 
+            errorData.message ||
+            `API request failed with status ${response.status}`
+          );
+        }
 
-    return data.choices[0].message.content;
+        const data = await response.json();
+        
+        // Handle different possible response formats
+        if (data.error) {
+          throw new Error(data.error.message || data.error);
+        }
+
+        // Try different response formats
+        if (data.response) {
+          return data.response;
+        }
+        
+        if (data.message) {
+          return data.message;
+        }
+        
+        if (data.choices && data.choices.length > 0) {
+          return data.choices[0].message?.content || data.choices[0].message;
+        }
+        
+        if (typeof data === 'string') {
+          return data;
+        }
+
+        throw new Error('Unexpected response format from backend');
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        // If this is the last endpoint, throw the error
+        if (endpoint === endpoints[endpoints.length - 1]) {
+          throw lastError;
+        }
+        // Otherwise, try the next endpoint
+        continue;
+      }
+    }
+    
+    throw lastError || new Error('Failed to communicate with backend API');
   } catch (error) {
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error('Failed to communicate with OpenAI API');
+    throw new Error('Failed to communicate with backend API');
   }
 }
 
