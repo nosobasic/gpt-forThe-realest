@@ -74,3 +74,20 @@ body {
 .message-input {
   overflow-y: auto;
 }
+
+/* Configuration Error */
+.config-error {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.config-error h1 {
+  margin: 0 0 1rem 0;
+  color: #c33;
+}
+
+.config-error p {
+  margin: 0.5rem 0;
+  color: var(--text-secondary);
+}

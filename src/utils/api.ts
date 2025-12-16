@@ -8,9 +8,17 @@
 // Backend API URL
 const API_URL = 'https://gpt-forthe-realest.onrender.com';
 
+export interface Attachment {
+  type: 'image';
+  data: string; // base64 encoded or URL
+  mimeType: string;
+  name?: string;
+}
+
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  attachments?: Attachment[];
 }
 
 export interface ChatResponse {
@@ -45,7 +53,11 @@ export async function sendMessage(messages: Message[]): Promise<string> {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            messages: messages,
+            messages: messages.map(msg => ({
+              role: msg.role,
+              content: msg.content,
+              attachments: msg.attachments || [],
+            })),
           }),
         });
 
