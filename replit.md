@@ -55,6 +55,13 @@ A full-featured ChatGPT clone with multiple chat conversations, persistent memor
 3. Vite proxies `/api/*` and `/chat` requests to the backend
 
 ## Recent Changes
+- 2026-02-01: Mobile optimization
+  - Full mobile-responsive layout for phones and tablets
+  - Sidebar slides in as overlay on mobile with touch-friendly toggle
+  - iOS safe area support for notched devices
+  - Larger touch targets (44px minimum) for better usability
+  - Font size 16px on inputs to prevent iOS zoom
+  - Optimized message bubbles and spacing for small screens
 - 2026-02-01: Added full ChatGPT clone features
   - PostgreSQL database with conversation and memory storage
   - Chat sidebar with conversation list
