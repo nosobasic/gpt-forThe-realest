@@ -11,6 +11,7 @@ interface SidebarProps {
   onDeleteMemory: (id: number) => void;
   isOpen: boolean;
   onToggle: () => void;
+  onClose: () => void;
 }
 
 export default function Sidebar({
@@ -23,18 +24,31 @@ export default function Sidebar({
   onDeleteMemory,
   isOpen,
   onToggle,
+  onClose,
 }: SidebarProps) {
   const [showMemories, setShowMemories] = useState(false);
 
+  const handleNewChat = () => {
+    onNewChat();
+    onClose();
+  };
+
+  const handleSelectConversation = (id: number) => {
+    onSelectConversation(id);
+    onClose();
+  };
+
   return (
     <>
+      {isOpen && <div className="sidebar-backdrop" onClick={onClose} />}
+      
       <button className="sidebar-toggle" onClick={onToggle}>
         {isOpen ? '✕' : '☰'}
       </button>
       
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <button className="new-chat-btn" onClick={onNewChat}>
+          <button className="new-chat-btn" onClick={handleNewChat}>
             + New Chat
           </button>
         </div>
@@ -64,7 +78,7 @@ export default function Sidebar({
                   <div
                     key={conv.id}
                     className={`conversation-item ${conv.id === currentConversationId ? 'active' : ''}`}
-                    onClick={() => onSelectConversation(conv.id)}
+                    onClick={() => handleSelectConversation(conv.id)}
                   >
                     <span className="conversation-title">{conv.title}</span>
                     <button

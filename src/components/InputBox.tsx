@@ -6,13 +6,14 @@ import type { Attachment } from '../utils/api';
 interface InputBoxProps {
   onSendMessage: (message: string, attachments?: Attachment[]) => void;
   isLoading: boolean;
+  inputRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 /**
  * InputBox Component
  * Handles user input, file attachments, speech-to-text, and message sending
  */
-export default function InputBox({ onSendMessage, isLoading }: InputBoxProps) {
+export default function InputBox({ onSendMessage, isLoading, inputRef }: InputBoxProps) {
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -213,7 +214,12 @@ export default function InputBox({ onSendMessage, isLoading }: InputBoxProps) {
           aria-label="Select file"
         />
         <textarea
-          ref={textareaRef}
+          ref={(el) => {
+            (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+            if (inputRef) {
+              (inputRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+            }
+          }}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyPress}

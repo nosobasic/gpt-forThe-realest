@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { 
   listConversations, 
@@ -30,6 +30,19 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const userId = user?.id || '';
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const closeSidebar = () => {
+    if (window.innerWidth <= 480) {
+      setSidebarOpen(false);
+    }
+  };
+
+  const focusInput = () => {
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  };
 
   const loadConversations = useCallback(async () => {
     if (!userId) return;
@@ -87,6 +100,7 @@ function App() {
       setCurrentConversationId(conv.id);
       setMessages([]);
       setError(null);
+      focusInput();
     } catch (err) {
       console.error('Failed to create conversation:', err);
       setError('Failed to create new chat');
@@ -184,6 +198,7 @@ function App() {
             onDeleteMemory={handleDeleteMemory}
             isOpen={sidebarOpen}
             onToggle={() => setSidebarOpen(!sidebarOpen)}
+            onClose={closeSidebar}
           />
           
           <div className="main-content">
@@ -196,7 +211,7 @@ function App() {
             {currentConversationId || messages.length > 0 ? (
               <main className="app-main">
                 <ChatWindow messages={messages} isLoading={isLoading} />
-                <InputBox onSendMessage={handleSendMessage} isLoading={isLoading} />
+                <InputBox onSendMessage={handleSendMessage} isLoading={isLoading} inputRef={inputRef} />
               </main>
             ) : (
               <div className="welcome-screen">
