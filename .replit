@@ -63,5 +63,5 @@ VITE_CLERK_PUBLISHABLE_KEY = "pk_test_YWN0dWFsLWxvYnN0ZXItODYuY2xlcmsuYWNjb3VudH
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["bash", "-c", "python app.py & npx serve -s dist -l 5000"]
+run = ["bash", "-c", "gunicorn --bind 0.0.0.0:3000 --reuse-port app:app & npx serve -s dist -l 5000"]
 build = ["npm", "run", "build"]

@@ -117,7 +117,7 @@ function App() {
     }
   };
 
-  const handleSendMessage = async (userMessage: string) => {
+  const handleSendMessage = async (userMessage: string, _attachments?: unknown) => {
     if (!userId) return;
     
     let convId = currentConversationId;

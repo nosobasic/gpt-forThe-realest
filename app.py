@@ -230,7 +230,9 @@ Return ONLY new facts not already captured above. Return each fact on its own li
                 with conn.cursor() as cur:
                     for memory in new_memories[:3]:
                         if memory and len(memory) > 3:
-                            cur.execute("INSERT INTO memories (user_id, content) VALUES (%s, %s)", (user_id, memory))
+                            cur.execute("SELECT id FROM memories WHERE user_id = %s AND content = %s", (user_id, memory))
+                            if not cur.fetchone():
+                                cur.execute("INSERT INTO memories (user_id, content) VALUES (%s, %s)", (user_id, memory))
                     conn.commit()
     except Exception as e:
         print(f"Memory extraction error: {e}")
