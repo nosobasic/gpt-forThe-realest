@@ -1,4 +1,6 @@
-const API_URL = '';
+const API_URL = import.meta.env.PROD 
+  ? 'https://gpt-forthe-realest.onrender.com' 
+  : '';
 
 export interface Attachment {
   type: 'image';
