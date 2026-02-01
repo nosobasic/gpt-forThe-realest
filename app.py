@@ -59,19 +59,23 @@ def create_conversation():
     if not user_id:
         return jsonify({"error": "Missing X-User-Id header"}), 401
     
-    ensure_user(user_id)
-    data = request.get_json() or {}
-    title = data.get('title', 'New Chat')
-    
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO conversations (user_id, title) VALUES (%s, %s) RETURNING id, title, created_at, updated_at",
-                (user_id, title)
-            )
-            conversation = cur.fetchone()
-            conn.commit()
-    return jsonify(conversation), 201
+    try:
+        ensure_user(user_id)
+        data = request.get_json(silent=True) or {}
+        title = data.get('title', 'New Chat')
+        
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO conversations (user_id, title) VALUES (%s, %s) RETURNING id, title, created_at, updated_at",
+                    (user_id, title)
+                )
+                conversation = cur.fetchone()
+                conn.commit()
+        return jsonify(conversation), 201
+    except Exception as e:
+        print(f"Error creating conversation: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/conversations/<int:conv_id>', methods=['GET'])
 def get_conversation(conv_id):
