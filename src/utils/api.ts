@@ -5,8 +5,8 @@
  * The backend handles OpenAI API communication securely
  */
 
-// Backend API URL
-const API_URL = 'https://gpt-forthe-realest.onrender.com';
+// Backend API URL - use relative URL to go through Vite proxy
+const API_URL = '';
 
 export interface Attachment {
   type: 'image';

@@ -18,10 +18,9 @@ CORS(app)  # Enable CORS for all routes
 
 # Initialize OpenAI client
 openai_api_key = os.getenv('OPENAI_API_KEY')
-if not openai_api_key:
-    raise ValueError("OPENAI_API_KEY environment variable is not set")
-
-client = OpenAI(api_key=openai_api_key)
+client = None
+if openai_api_key:
+    client = OpenAI(api_key=openai_api_key)
 
 
 @app.route('/')
@@ -39,6 +38,13 @@ def chat():
     Returns: { "response": "..." } or { "message": "..." }
     """
     try:
+        if not client:
+            return jsonify({
+                "error": {
+                    "message": "OPENAI_API_KEY environment variable is not set"
+                }
+            }), 500
+        
         data = request.get_json()
         
         if not data or 'messages' not in data:
@@ -83,6 +89,6 @@ def chat():
 
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
+    port = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=port, debug=False)
 
