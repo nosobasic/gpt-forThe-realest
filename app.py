@@ -22,6 +22,46 @@ client = OpenAI(api_key=openai_api_key) if openai_api_key else None
 def get_db():
     return psycopg2.connect(os.environ['DATABASE_URL'], cursor_factory=RealDictCursor)
 
+def init_db():
+    """Create database tables if they don't exist"""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id VARCHAR(255) PRIMARY KEY,
+                    email VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS conversations (
+                    id SERIAL PRIMARY KEY,
+                    user_id VARCHAR(255) REFERENCES users(id),
+                    title VARCHAR(255) DEFAULT 'New Chat',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS messages (
+                    id SERIAL PRIMARY KEY,
+                    conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+                    role VARCHAR(50) NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS memories (
+                    id SERIAL PRIMARY KEY,
+                    user_id VARCHAR(255) REFERENCES users(id),
+                    content TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+    print("Database tables initialized")
+
 def ensure_user(user_id, email=None):
     with get_db() as conn:
         with conn.cursor() as cur:
@@ -316,5 +356,6 @@ def delete_memory(memory_id):
     return jsonify({"success": True})
 
 if __name__ == '__main__':
+    init_db()
     port = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=port, debug=False)
