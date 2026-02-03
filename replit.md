@@ -39,6 +39,11 @@ A full-featured ChatGPT clone with multiple chat conversations, persistent memor
 - Memory system that extracts and stores key facts about the user
 - Memories are injected into AI context for personalized responses
 - Clerk authentication integration
+- Streaming responses via SSE for real-time AI text generation
+- Markdown rendering with syntax-highlighted code blocks (react-syntax-highlighter)
+- Copy buttons on code blocks and full message responses
+- Regenerate response button on assistant messages
+- Keyboard shortcuts: Cmd/Ctrl+K for new chat, Shift+Enter for newline
 
 ## Environment Variables
 
@@ -55,6 +60,14 @@ A full-featured ChatGPT clone with multiple chat conversations, persistent memor
 3. Vite proxies `/api/*` and `/chat` requests to the backend
 
 ## Recent Changes
+- 2026-02-03: UI polish and advanced features
+  - Streaming responses via SSE for real-time AI text generation
+  - Markdown rendering with syntax-highlighted code blocks (oneDark theme)
+  - Copy buttons on code blocks and full message responses with visual feedback
+  - Regenerate response button on last assistant message (uses messagesRef for state safety)
+  - Keyboard shortcuts: Cmd/Ctrl+K for new chat using useCallback
+  - Improved typography with 1.6 line-height for better readability
+  - Animated typing indicator dots during loading
 - 2026-02-01: Mobile optimization
   - Full mobile-responsive layout for phones and tablets
   - Sidebar slides in as overlay on mobile with touch-friendly toggle
