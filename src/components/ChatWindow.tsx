@@ -5,6 +5,7 @@ import Message from './Message';
 interface ChatWindowProps {
   messages: MessageType[];
   isLoading: boolean;
+  onRegenerate?: () => void;
 }
 
 const POSITIVE_AFFIRMATIONS = [
@@ -44,7 +45,7 @@ const POSITIVE_AFFIRMATIONS = [
  * ChatWindow Component
  * Displays all messages in the conversation with auto-scroll to newest
  */
-export default function ChatWindow({ messages, isLoading }: ChatWindowProps) {
+export default function ChatWindow({ messages, isLoading, onRegenerate }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentAffirmationIndex, setCurrentAffirmationIndex] = useState(0);
 
@@ -79,9 +80,23 @@ export default function ChatWindow({ messages, isLoading }: ChatWindowProps) {
         </div>
       ) : (
         <div className="messages-container">
-          {messages.map((message, index) => (
-            <Message key={index} message={message} />
-          ))}
+          {(() => {
+            const lastCompletedAssistantIndex = messages.reduce((lastIdx, msg, idx) => {
+              if (msg.role === 'assistant' && msg.content && msg.content.length > 0) {
+                return idx;
+              }
+              return lastIdx;
+            }, -1);
+            
+            return messages.map((message, index) => (
+              <Message 
+                key={index} 
+                message={message} 
+                onRegenerate={onRegenerate}
+                isLastAssistant={!isLoading && message.role === 'assistant' && index === lastCompletedAssistantIndex}
+              />
+            ));
+          })()}
           {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
             <div className="message message-assistant">
               <div className="message-content">

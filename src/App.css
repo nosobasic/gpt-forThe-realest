@@ -548,12 +548,32 @@
   margin-bottom: 0.25rem;
 }
 
-.message-copy {
-  opacity: 0;
-  transition: opacity 0.15s ease;
+.message-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
-.message-content:hover .message-copy {
+.message-copy,
+.regenerate-button {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+.message-copy:hover,
+.regenerate-button:hover {
+  color: var(--text-primary);
+  background: var(--hover-bg);
+}
+
+.message-content:hover .message-copy,
+.message-content:hover .regenerate-button {
   opacity: 1;
 }
 

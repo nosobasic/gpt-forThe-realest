@@ -49,6 +49,8 @@ function App() {
 
   const userId = user?.id || '';
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const messagesRef = useRef<MessageType[]>(messages);
+  messagesRef.current = messages;
   const [affirmationIndex, setAffirmationIndex] = useState(0);
 
   useEffect(() => {
@@ -221,6 +223,47 @@ function App() {
     }
   };
 
+  const handleRegenerate = useCallback(async () => {
+    if (!userId || !currentConversationId || isLoading) return;
+    
+    const currentMessages = messagesRef.current;
+    const lastUserMessageIndex = currentMessages.map(m => m.role).lastIndexOf('user');
+    if (lastUserMessageIndex === -1) return;
+    
+    const lastUserMessage = currentMessages[lastUserMessageIndex].content;
+    
+    setMessages(() => {
+      const newMessages = currentMessages.filter((_, i) => i <= lastUserMessageIndex);
+      return [...newMessages, { role: 'assistant' as const, content: '' }];
+    });
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await sendMessageToConversationStream(userId, currentConversationId, lastUserMessage, (chunk) => {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastIndex = newMessages.length - 1;
+          const lastMessage = newMessages[lastIndex];
+          if (lastMessage.role === 'assistant') {
+            newMessages[lastIndex] = { ...lastMessage, content: lastMessage.content + chunk };
+          }
+          return newMessages;
+        });
+      });
+      
+      loadConversations();
+      setTimeout(() => loadMemories(), 2000);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
+      console.error('Error regenerating:', errorMessage);
+      setMessages(prev => prev.slice(0, -1));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, currentConversationId, isLoading, loadConversations, loadMemories]);
+
   if (!isLoaded) {
     return (
       <div className="app">
@@ -261,7 +304,7 @@ function App() {
             
             {currentConversationId || messages.length > 0 ? (
               <main className="app-main">
-                <ChatWindow messages={messages} isLoading={isLoading} />
+                <ChatWindow messages={messages} isLoading={isLoading} onRegenerate={handleRegenerate} />
                 <InputBox onSendMessage={handleSendMessage} isLoading={isLoading} inputRef={inputRef} />
               </main>
             ) : (

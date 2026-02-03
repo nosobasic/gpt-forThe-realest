@@ -6,6 +6,8 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface MessageProps {
   message: MessageType;
+  onRegenerate?: () => void;
+  isLastAssistant?: boolean;
 }
 
 function CopyButton({ text, className = '' }: { text: string; className?: string }) {
@@ -33,7 +35,7 @@ function CopyButton({ text, className = '' }: { text: string; className?: string
   );
 }
 
-export default function Message({ message }: MessageProps) {
+export default function Message({ message, onRegenerate, isLastAssistant }: MessageProps) {
   const isUser = message.role === 'user';
   
   return (
@@ -41,9 +43,24 @@ export default function Message({ message }: MessageProps) {
       <div className="message-content">
         <div className="message-header">
           <div className="message-role">{isUser ? 'You' : 'Assistant'}</div>
-          {!isUser && message.content && (
-            <CopyButton text={message.content} className="message-copy" />
-          )}
+          <div className="message-actions">
+            {!isUser && message.content && (
+              <CopyButton text={message.content} className="message-copy" />
+            )}
+            {!isUser && isLastAssistant && onRegenerate && (
+              <button 
+                className="regenerate-button" 
+                onClick={onRegenerate}
+                title="Regenerate response"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 4v6h6" />
+                  <path d="M23 20v-6h-6" />
+                  <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
         {message.attachments && message.attachments.length > 0 && (
           <div className="message-attachments">
