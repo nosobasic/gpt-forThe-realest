@@ -120,7 +120,7 @@ function App() {
     }
   };
 
-  const handleNewChat = async () => {
+  const handleNewChat = useCallback(async () => {
     if (!userId) return;
     try {
       const conv = await createConversation(userId);
@@ -133,7 +133,20 @@ function App() {
       console.error('Failed to create conversation:', err);
       setError('Failed to create new chat');
     }
-  };
+  }, [userId, focusInput]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        if (isSignedIn && !isLoading) {
+          handleNewChat();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSignedIn, isLoading, handleNewChat]);
 
   const handleDeleteConversation = async (id: number) => {
     if (!userId) return;

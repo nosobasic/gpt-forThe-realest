@@ -82,7 +82,7 @@ export default function ChatWindow({ messages, isLoading }: ChatWindowProps) {
           {messages.map((message, index) => (
             <Message key={index} message={message} />
           ))}
-          {isLoading && (
+          {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
             <div className="message message-assistant">
               <div className="message-content">
                 <div className="message-role">Assistant</div>
