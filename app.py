@@ -6,7 +6,7 @@ Handles OpenAI API communication, conversations, and memories
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -247,6 +247,83 @@ def chat_in_conversation(conv_id):
             extract_memories(user_id, user_content, assistant_content, memories)
     
     return jsonify({"response": assistant_content, "message": assistant_content})
+
+@app.route('/api/conversations/<int:conv_id>/chat/stream', methods=['POST'])
+def chat_in_conversation_stream(conv_id):
+    user_id = request.headers.get('X-User-Id')
+    if not user_id:
+        return jsonify({"error": "Missing X-User-Id header"}), 401
+    
+    if not client:
+        return jsonify({"error": {"message": "OPENAI_API_KEY not set"}}), 500
+    
+    data = request.get_json()
+    if not data or 'content' not in data:
+        return jsonify({"error": {"message": "Missing 'content' field"}}), 400
+    
+    user_content = data['content']
+    
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM conversations WHERE id = %s AND user_id = %s", (conv_id, user_id))
+            if not cur.fetchone():
+                return jsonify({"error": "Conversation not found"}), 404
+            
+            cur.execute("INSERT INTO messages (conversation_id, role, content) VALUES (%s, 'user', %s)", (conv_id, user_content))
+            
+            cur.execute("SELECT role, content FROM messages WHERE conversation_id = %s ORDER BY created_at ASC", (conv_id,))
+            messages = [{"role": m["role"], "content": m["content"]} for m in cur.fetchall()]
+            
+            cur.execute("SELECT content FROM memories WHERE user_id = %s", (user_id,))
+            memories = [m["content"] for m in cur.fetchall()]
+            
+            conn.commit()
+    
+    system_message = "You are a helpful AI assistant."
+    if memories:
+        system_message += "\n\nHere are some things you know about the user:\n" + "\n".join(f"- {m}" for m in memories)
+    
+    api_messages = [{"role": "system", "content": system_message}] + messages
+    
+    def generate():
+        full_response = ""
+        try:
+            stream = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=api_messages,
+                temperature=0.7,
+                stream=True
+            )
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    content = chunk.choices[0].delta.content
+                    full_response += content
+                    yield f"data: {content}\n\n"
+            
+            yield "data: [DONE]\n\n"
+            
+            with get_db() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("INSERT INTO messages (conversation_id, role, content) VALUES (%s, 'assistant', %s)", (conv_id, full_response))
+                    
+                    if len(messages) == 1:
+                        title = user_content[:50] + ("..." if len(user_content) > 50 else "")
+                        cur.execute("UPDATE conversations SET title = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s", (title, conv_id))
+                    else:
+                        cur.execute("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = %s", (conv_id,))
+                    
+                    conn.commit()
+            
+            extract_memories(user_id, user_content, full_response, memories)
+            
+        except Exception as e:
+            yield f"data: [ERROR]{str(e)}\n\n"
+    
+    return Response(generate(), mimetype='text/event-stream', headers={
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
+    })
 
 def extract_memories(user_id, user_message, assistant_response, existing_memories):
     if not client:

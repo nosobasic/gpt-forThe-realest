@@ -23,7 +23,7 @@ import {
   createConversation, 
   getConversation, 
   deleteConversation,
-  sendMessageToConversation,
+  sendMessageToConversationStream,
   listMemories,
   deleteMemory,
 } from './utils/api';
@@ -181,18 +181,28 @@ function App() {
     setIsLoading(true);
     setError(null);
 
+    setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
     try {
-      const assistantResponse = await sendMessageToConversation(userId, convId, userMessage);
-      const assistantMsg: MessageType = { role: 'assistant', content: assistantResponse };
-      setMessages(prev => [...prev, assistantMsg]);
+      await sendMessageToConversationStream(userId, convId, userMessage, (chunk) => {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastIndex = newMessages.length - 1;
+          const lastMessage = newMessages[lastIndex];
+          if (lastMessage.role === 'assistant') {
+            newMessages[lastIndex] = { ...lastMessage, content: lastMessage.content + chunk };
+          }
+          return newMessages;
+        });
+      });
       
       loadConversations();
-      
       setTimeout(() => loadMemories(), 2000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
       console.error('Error sending message:', errorMessage);
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }

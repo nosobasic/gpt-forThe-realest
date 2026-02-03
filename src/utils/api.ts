@@ -108,6 +108,59 @@ export async function sendMessageToConversation(userId: string, conversationId: 
   return data.response || data.message;
 }
 
+export async function sendMessageToConversationStream(
+  userId: string, 
+  conversationId: number, 
+  content: string,
+  onChunk: (chunk: string) => void
+): Promise<void> {
+  const response = await fetch(`${API_URL}/api/conversations/${conversationId}/chat/stream`, {
+    method: 'POST',
+    headers: getHeaders(userId),
+    body: JSON.stringify({ content }),
+  });
+  
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error?.message || data.error || 'Failed to send message');
+  }
+  
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('No reader available');
+  
+  const decoder = new TextDecoder();
+  let buffer = '';
+  
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6);
+        if (data === '[DONE]') {
+          return;
+        }
+        if (data.startsWith('[ERROR]')) {
+          throw new Error(data.slice(7));
+        }
+        onChunk(data);
+      }
+    }
+  }
+  
+  if (buffer.startsWith('data: ')) {
+    const data = buffer.slice(6);
+    if (data !== '[DONE]' && !data.startsWith('[ERROR]')) {
+      onChunk(data);
+    }
+  }
+}
+
 export async function listMemories(userId: string): Promise<Memory[]> {
   const response = await fetch(`${API_URL}/api/memories`, {
     headers: getHeaders(userId),
