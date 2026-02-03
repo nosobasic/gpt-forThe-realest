@@ -62,6 +62,12 @@ def init_db():
             conn.commit()
     print("Database tables initialized")
 
+# Initialize database tables on module load (works with gunicorn)
+try:
+    init_db()
+except Exception as e:
+    print(f"Database initialization error: {e}")
+
 def ensure_user(user_id, email=None):
     with get_db() as conn:
         with conn.cursor() as cur:
