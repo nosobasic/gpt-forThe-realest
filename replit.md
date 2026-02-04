@@ -44,6 +44,7 @@ A full-featured ChatGPT clone with multiple chat conversations, persistent memor
 - Copy buttons on code blocks and full message responses
 - Regenerate response button on assistant messages
 - Keyboard shortcuts: Cmd/Ctrl+K for new chat, Shift+Enter for newline
+- Image upload support for visual context (uses GPT-4o for vision)
 
 ## Environment Variables
 
