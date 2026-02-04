@@ -262,6 +262,7 @@ def chat_in_conversation_stream(conv_id):
         return jsonify({"error": {"message": "Missing 'content' field"}}), 400
     
     user_content = data['content']
+    attachments = data.get('attachments', [])
     
     with get_db() as conn:
         with conn.cursor() as cur:
@@ -283,13 +284,33 @@ def chat_in_conversation_stream(conv_id):
     if memories:
         system_message += "\n\nHere are some things you know about the user:\n" + "\n".join(f"- {m}" for m in memories)
     
-    api_messages = [{"role": "system", "content": system_message}] + messages
+    api_messages = [{"role": "system", "content": system_message}]
+    
+    for msg in messages[:-1]:
+        api_messages.append({"role": msg["role"], "content": msg["content"]})
+    
+    if attachments and len(attachments) > 0:
+        content_parts = []
+        if user_content:
+            content_parts.append({"type": "text", "text": user_content})
+        for att in attachments:
+            if att.get('type') == 'image' and att.get('data'):
+                image_url = f"data:{att.get('mimeType', 'image/png')};base64,{att['data']}"
+                content_parts.append({
+                    "type": "image_url",
+                    "image_url": {"url": image_url}
+                })
+        api_messages.append({"role": "user", "content": content_parts})
+        model = "gpt-4o"
+    else:
+        api_messages.append({"role": "user", "content": user_content})
+        model = "gpt-3.5-turbo"
     
     def generate():
         full_response = ""
         try:
             stream = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model=model,
                 messages=api_messages,
                 temperature=0.7,
                 stream=True

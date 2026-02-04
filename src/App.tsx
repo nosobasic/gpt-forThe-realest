@@ -230,7 +230,9 @@ function App() {
     const lastUserMessageIndex = currentMessages.map(m => m.role).lastIndexOf('user');
     if (lastUserMessageIndex === -1) return;
     
-    const lastUserMessage = currentMessages[lastUserMessageIndex].content;
+    const lastUserMsg = currentMessages[lastUserMessageIndex];
+    const lastUserMessage = lastUserMsg.content;
+    const lastUserAttachments = lastUserMsg.attachments;
     
     setMessages(() => {
       const newMessages = currentMessages.filter((_, i) => i <= lastUserMessageIndex);
@@ -250,7 +252,7 @@ function App() {
           }
           return newMessages;
         });
-      });
+      }, lastUserAttachments);
       
       loadConversations();
       setTimeout(() => loadMemories(), 2000);
