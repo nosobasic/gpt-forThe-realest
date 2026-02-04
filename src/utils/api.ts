@@ -112,12 +112,13 @@ export async function sendMessageToConversationStream(
   userId: string, 
   conversationId: number, 
   content: string,
-  onChunk: (chunk: string) => void
+  onChunk: (chunk: string) => void,
+  attachments?: Attachment[]
 ): Promise<void> {
   const response = await fetch(`${API_URL}/api/conversations/${conversationId}/chat/stream`, {
     method: 'POST',
     headers: getHeaders(userId),
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, attachments }),
   });
   
   if (!response.ok) {

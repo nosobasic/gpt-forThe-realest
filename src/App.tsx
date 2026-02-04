@@ -27,7 +27,7 @@ import {
   listMemories,
   deleteMemory,
 } from './utils/api';
-import type { Message as MessageType, Conversation, Memory } from './utils/api';
+import type { Message as MessageType, Conversation, Memory, Attachment } from './utils/api';
 import ChatWindow from './components/ChatWindow';
 import InputBox from './components/InputBox';
 import Navbar from './components/Navbar';
@@ -174,7 +174,7 @@ function App() {
     }
   };
 
-  const handleSendMessage = async (userMessage: string, _attachments?: unknown) => {
+  const handleSendMessage = async (userMessage: string, attachments?: Attachment[]) => {
     if (!userId) return;
     
     let convId = currentConversationId;
@@ -191,7 +191,7 @@ function App() {
       }
     }
 
-    const userMsg: MessageType = { role: 'user', content: userMessage };
+    const userMsg: MessageType = { role: 'user', content: userMessage, attachments };
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
     setError(null);
@@ -209,7 +209,7 @@ function App() {
           }
           return newMessages;
         });
-      });
+      }, attachments);
       
       loadConversations();
       setTimeout(() => loadMemories(), 2000);
